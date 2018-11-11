@@ -226,6 +226,46 @@ def withdraw():
             conn.close()
     return
 
+@app.route("/getBalance",methods=['POST'])
+def getBalace():
+    if request.method  == 'POST':
+        result = request.form
+        # print(result)
+        _nic = result.get('nic')
+       
+        try:
+            conn = mysql.connect()
+            cursor = conn.cursor()
+            TOTAL_BALANCE_QUERY = "SELECT SUM(amount) from cards WHERE nic = '"+_nic+"'"
+            print(TOTAL_BALANCE_QUERY)
+            cursor.execute(TOTAL_BALANCE_QUERY)
+            amount = cursor.fetchall()
+            curretBalance:float = amount[0][0]
+            conn.commit()
+            print(amount)
+            print(curretBalance)
+            if curretBalance != None:
+                balanceObj = {
+                    'balance':curretBalance
+                }
+                resp = jsonify(balanceObj)
+                resp.status_code = 200
+                return resp
+        
+            resp = jsonify('Card Not Found!')
+            resp.status_code = 404
+            return resp
+        except Exception as e:
+            print(e)
+            resp = jsonify('Error')
+            resp.status_code = 400
+            return resp
+        finally:
+            cursor.close()
+            conn.close()
+    return
+    
+
 
 if __name__ == '__main__':
     app.run(debug=True)
