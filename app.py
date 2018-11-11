@@ -157,15 +157,59 @@ def deposit():
             conn.commit()
             print(amount)
             if len(amount) == 1:
-                print('im inside')
                 depositAmount = float(curretBalance) + float(_amount)
-                
-
-                #print(newAmount)
                 DEPOSIT_QUERY = "UPDATE cards SET amount ='"+str(depositAmount)+"' WHERE card_no ='"+_card_no+"' AND exp = '"+_exp+"' AND card_holder_name = '"+_card_holder_name+"' AND csv = '"+_csv+"'"
                 cursor.execute(DEPOSIT_QUERY)
                 conn.commit()
                 resp = jsonify('Deposit amount successfully!')
+                resp.status_code = 200
+                return resp
+        
+            resp = jsonify('Card Not Found!')
+            resp.status_code = 404
+            return resp
+        except Exception as e:
+            print(e)
+            resp = jsonify('Error')
+            resp.status_code = 400
+            return resp
+        finally:
+            cursor.close()
+            conn.close()
+    return
+
+@app.route("/withdraw",methods=['PUT'])
+def withdraw():
+    if request.method  == 'PUT':
+        result = request.form
+        # print(result)
+        _card_no = result.get('card_no')
+        _exp = result.get('exp')
+        _card_holder_name = result.get('card_holder_name')
+        _csv = result.get('csv')
+        _amount:float = result.get('amount')
+
+        try:
+            conn = mysql.connect()
+            cursor = conn.cursor()
+            CHECK_CARD_QUERY = "SELECT amount FROM cards WHERE card_no ='"+_card_no+"' AND exp = '"+_exp+"' AND card_holder_name = '"+_card_holder_name+"' AND csv = '"+_csv+"'"
+            print(CHECK_CARD_QUERY)
+            cursor.execute(CHECK_CARD_QUERY)
+            amount = cursor.fetchall()
+            curretBalance:float = amount[0][0]
+            conn.commit()
+            print(amount)
+            if len(amount) == 1:
+                if(curretBalance < _amount):
+                    resp = jsonify('No Credits to withdraw!')
+                    resp.status_code = 404
+                    return resp
+
+                depositAmount = float(curretBalance) - float(_amount)
+                DEPOSIT_QUERY = "UPDATE cards SET amount ='"+str(depositAmount)+"' WHERE card_no ='"+_card_no+"' AND exp = '"+_exp+"' AND card_holder_name = '"+_card_holder_name+"' AND csv = '"+_csv+"'"
+                cursor.execute(DEPOSIT_QUERY)
+                conn.commit()
+                resp = jsonify('Withdraw amount successfully!')
                 resp.status_code = 200
                 return resp
         
